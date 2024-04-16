@@ -1,194 +1,226 @@
+
+
+import org.apache.commons.math4.legacy.analysis.UnivariateFunction;
+import org.apache.commons.math4.legacy.analysis.integration.SimpsonIntegrator;
+import org.apache.commons.math4.legacy.analysis.integration.UnivariateIntegrator;
+import org.apache.commons.math4.legacy.analysis.polynomials.PolynomialFunction;
+
+import java.util.InputMismatchException;
 import java.util.Scanner;
-import java.util.function.Function;
 
 public class IntegralCalculator {
 
-    // Method to calculate a single integral using the trapezoidal rule
-    public static double singleIntegral(Function<Double, Double> f, double a, double b, int n) {
-        double h = (b - a) / n; // Calculate width of each subdivision
-        double sum = 0.5 * (f.apply(a) + f.apply(b)); // Initialize sum with endpoints
-        for (int i = 1; i < n; i++) {
-            double x = a + i * h; // Calculate x value for current subdivision
-            sum += f.apply(x); // Add function value at x to sum
-        }
-        return h * sum; // Return the result of the trapezoidal rule
+    // Method to perform indefinite integration
+    public static double indefiniteIntegration(UnivariateFunction f) {
+        UnivariateIntegrator integrator = new SimpsonIntegrator();
+        return integrator.integrate(1000, f, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
     }
 
-    // Method to calculate a double integral using the trapezoidal rule
-    public static double doubleIntegral(Function<double[], Double> f, double[] a, double[] b, int[] n) {
-        double hx = (b[0] - a[0]) / n[0]; // Width of subdivision in the x-dimension
-        double hy = (b[1] - a[1]) / n[1]; // Width of subdivision in the y-dimension
-        double sum = 0.0; // Initialize sum
-        for (int i = 0; i < n[0]; i++) {
-            for (int j = 0; j < n[1]; j++) {
-                double x = a[0] + i * hx; // Calculate x value for current subdivision
-                double y = a[1] + j * hy; // Calculate y value for current subdivision
-                double[] point = {x, y}; // Array representing current point
-                double value = f.apply(point); // Calculate function value at current point
-                sum += value; // Add function value to sum
-            }
-        }
-        return hx * hy * sum; // Return the result of the double integral
+    // Method to perform definite integration
+    public static double definiteIntegration(UnivariateFunction f, double lowerBound, double upperBound) {
+        UnivariateIntegrator integrator = new SimpsonIntegrator();
+        return integrator.integrate(1000, f, lowerBound, upperBound);
     }
 
-    // Method to calculate a triple integral using the trapezoidal rule
-    public static double tripleIntegral(Function<double[], Double> f, double[] a, double[] b, int[] n) {
-        double hx = (b[0] - a[0]) / n[0]; // Width of subdivision in the x-dimension
-        double hy = (b[1] - a[1]) / n[1]; // Width of subdivision in the y-dimension
-        double hz = (b[2] - a[2]) / n[2]; // Width of subdivision in the z-dimension
-        double sum = 0.0; // Initialize sum
-        for (int i = 0; i < n[0]; i++) {
-            for (int j = 0; j < n[1]; j++) {
-                for (int k = 0; k < n[2]; k++) {
-                    double x = a[0] + i * hx; // Calculate x value for current subdivision
-                    double y = a[1] + j * hy; // Calculate y value for current subdivision
-                    double z = a[2] + k * hz; // Calculate z value for current subdivision
-                    double[] point = {x, y, z}; // Array representing current point
-                    double value = f.apply(point); // Calculate function value at current point
-                    sum += value; // Add function value to sum
-                }
-            }
-        }
-        return hx * hy * hz * sum; // Return the result of the triple integral
+    // Method to perform double integration (definite or indefinite)
+    public static double doubleIntegration(UnivariateFunction f, double lowerX, double upperX, UnivariateFunction g, double lowerY, double upperY, boolean definite) {
+        UnivariateIntegrator integrator = new SimpsonIntegrator();
+        UnivariateFunction innerIntegral = y -> definite ? definiteIntegration(g, lowerY, upperY) : indefiniteIntegration(g);
+        return integrator.integrate(1000, x -> definite ? definiteIntegration(f, lowerX, upperX) * innerIntegral.value(x) : indefiniteIntegration(f), lowerX, upperX);
+    }
+
+    // Method to perform triple integration (definite or indefinite)
+    public static double tripleIntegration(UnivariateFunction f, double lowerX, double upperX, UnivariateFunction g, double lowerY, double upperY, UnivariateFunction h, double lowerZ, double upperZ, boolean definite) {
+        UnivariateIntegrator integrator = new SimpsonIntegrator();
+        UnivariateFunction innerIntegral = z -> definite ? definiteIntegration(h, lowerZ, upperZ) : indefiniteIntegration(h);
+        return integrator.integrate(1000, y -> doubleIntegration(f, lowerX, upperX, g, lowerY, upperY, definite) * innerIntegral.value(y), lowerY, upperY);
     }
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("What type of integral do you need for your problem?");
-        System.out.println("1. Single Integral");
-        System.out.println("2. Double Integral");
-        System.out.println("3. Triple Integral");
+        try {
+            System.out.println("Select the type of integration:");
+            System.out.println("1. Indefinite Integral");
+            System.out.println("2. Definite Integral");
+            System.out.println("3. Double Integral (Definite)");
+            System.out.println("4. Double Integral (Indefinite)");
+            System.out.println("5. Triple Integral (Definite)");
+            System.out.println("6. Triple Integral (Indefinite)");
+            int option = scanner.nextInt();
+            scanner.nextLine();  // Consume newline character
 
-        int choice = scanner.nextInt();
-        switch (choice) {
-            case 1:
-                // Single integral
-                System.out.println("Enter the function for the single integral (e.g., x^2):");
-                String singleFunction = scanner.next();
-                Function<Double, Double> f1 = x -> {
-                    try {
-                        return Double.parseDouble(singleFunction.replaceAll("x", String.valueOf(x)));
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid function format. Please enter a valid function.");
-                        return Double.NaN;
+            switch (option) {
+                case 1:
+                    System.out.println("Enter the function for indefinite integration (in terms of x):");
+                    String functionString = scanner.nextLine();
+
+                    // Handle the case when the function is just "x"
+                    if (functionString.equals("x")) {
+                        System.out.println("Indefinite Integral of 'x' is (x^2)/2 + C");
+                        return;
                     }
-                };
 
-                double a1, b1;
-                int n1;
-                try {
-                    System.out.println("Enter the lower limit (a) for the single integral:");
-                    a1 = scanner.nextDouble();
-                    System.out.println("Enter the upper limit (b) for the single integral:");
-                    b1 = scanner.nextDouble();
-                    System.out.println("Enter the number of subdivisions (n) for the single integral:");
-                    n1 = scanner.nextInt();
-                } catch (Exception e) {
-                    System.out.println("Invalid input format. Please enter valid numeric values.");
-                    return;
-                }
+                    // Parse the string representing a polynomial expression into an array of coefficients
+                    double[] coefficients = parsePolynomialCoefficients(functionString);
 
-                double result1 = singleIntegral(f1, a1, b1, n1);
-                System.out.println("Single Integral Result: " + result1);
-                break;
+                    // Define the function for indefinite integration
+                    UnivariateFunction function = new PolynomialFunction(coefficients);
 
-            case 2:
-                // Double integral
-                System.out.println("Enter the function for the double integral (e.g., x^2 + y^2):");
-                String doubleFunction = scanner.next();
-                Function<double[], Double> f2 = point -> {
-                    try {
-                        double x = point[0];
-                        double y = point[1];
-                        return Double.parseDouble(doubleFunction.replaceAll("x", String.valueOf(x)).replaceAll("y", String.valueOf(y)));
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid function format. Please enter a valid function.");
-                        return Double.NaN;
-                    }
-                };
+                    // Perform indefinite integration
+                    double result = indefiniteIntegration(function);
 
-                double[] a2 = new double[2];
-                double[] b2 = new double[2];
-                int[] n2 = new int[2];
+                    System.out.println("Indefinite Integral Result: " + result);
+                    break;
+                case 2:
+                    System.out.println("Enter the function for definite integration (in terms of x):");
+                    String definiteFunctionString = scanner.nextLine();
 
-                try {
-                    System.out.println("Enter the lower limit (a) for the double integral (x):");
-                    a2[0] = scanner.nextDouble();
-                    System.out.println("Enter the upper limit (b) for the double integral (x):");
-                    b2[0] = scanner.nextDouble();
-                    System.out.println("Enter the number of subdivisions (n) for the double integral (x):");
-                    n2[0] = scanner.nextInt();
+                    System.out.println("Enter the lower bound for definite integration:");
+                    double definiteLowerBound = scanner.nextDouble();
+                    scanner.nextLine();  // Consume newline character
 
-                    System.out.println("Enter the lower limit (a) for the double integral (y):");
-                    a2[1] = scanner.nextDouble();
-                    System.out.println("Enter the upper limit (b) for the double integral (y):");
-                    b2[1] = scanner.nextDouble();
-                    System.out.println("Enter the number of subdivisions (n) for the double integral (y):");
-                    n2[1] = scanner.nextInt();
-                } catch (Exception e) {
-                    System.out.println("Invalid input format. Please enter valid numeric values.");
-                    return;
-                }
+                    System.out.println("Enter the upper bound for definite integration:");
+                    double definiteUpperBound = scanner.nextDouble();
+                    scanner.nextLine();  // Consume newline character
 
-                double result2 = doubleIntegral(f2, a2, b2, n2);
-                System.out.println("Double Integral Result: " + result2);
-                break;
+                    // Parse the string representing a polynomial expression into an array of coefficients
+                    double[] definiteCoefficients = parsePolynomialCoefficients(definiteFunctionString);
 
-            case 3:
-                // Triple integral
-                System.out.println("Enter the function for the triple integral (e.g., x^2 + y^2 + z^2):");
-                String tripleFunction = scanner.next();
-                Function<double[], Double> f3 = point -> {
-                    try {
-                        double x = point[0];
-                        double y = point[1];
-                        double z = point[2];
-                        return Double.parseDouble(tripleFunction.replaceAll("x", String.valueOf(x)).replaceAll("y", String.valueOf(y)).replaceAll("z", String.valueOf(z)));
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid function format. Please enter a valid function.");
-                        return Double.NaN;
-                    }
-                };
+                    // Define the function for definite integration
+                    UnivariateFunction definiteFunction = new PolynomialFunction(definiteCoefficients);
 
-                double[] a3 = new double[3];
-                double[] b3 = new double[3];
-                int[] n3 = new int[3];
+                    // Perform definite integration
+                    double definiteResult = definiteIntegration(definiteFunction, definiteLowerBound, definiteUpperBound);
 
-                try {
-                    System.out.println("Enter the lower limit (a) for the triple integral (x):");
-                    a3[0] = scanner.nextDouble();
-                    System.out.println("Enter the upper limit (b) for the triple integral (x):");
-                    b3[0] = scanner.nextDouble();
-                    System.out.println("Enter the number of subdivisions (n) for the triple integral (x):");
-                    n3[0] = scanner.nextInt();
+                    System.out.println("Definite Integral Result: " + definiteResult);
+                    break;
+                case 3:
+                    System.out.println("Enter the function f(x) for double integration (in terms of x):");
+                    String doubleFunctionStringX = scanner.nextLine();
 
-                    System.out.println("Enter the lower limit (a) for the triple integral (y):");
-                    a3[1] = scanner.nextDouble();
-                    System.out.println("Enter the upper limit (b) for the triple integral (y):");
-                    b3[1] = scanner.nextDouble();
-                    System.out.println("Enter the number of subdivisions (n) for the triple integral (y):");
-                    n3[1] = scanner.nextInt();
+                    System.out.println("Enter the lower bound for integration in x direction:");
+                    double doubleLowerBoundX = scanner.nextDouble();
+                    scanner.nextLine();  // Consume newline character
 
-                    System.out.println("Enter the lower limit (a) for the triple integral (z):");
-                    a3[2] = scanner.nextDouble();
-                    System.out.println("Enter the upper limit (b) for the triple integral (z):");
-                    b3[2] = scanner.nextDouble();
-                    System.out.println("Enter the number of subdivisions (n) for the triple integral (z):");
-                    n3[2] = scanner.nextInt();
-                } catch (Exception e) {
-                    System.out.println("Invalid input format. Please enter valid numeric values.");
-                    return;
-                }
+                    System.out.println("Enter the upper bound for integration in x direction:");
+                    double doubleUpperBoundX = scanner.nextDouble();
+                    scanner.nextLine();  // Consume newline character
 
-                double result3 = tripleIntegral(f3, a3, b3, n3);
-                System.out.println("Triple Integral Result: " + result3);
-                break;
+                    System.out.println("Enter the function g(y) for double integration (in terms of y):");
+                    String doubleFunctionStringY = scanner.nextLine();
 
-            default:
-                System.out.println("Invalid choice. Please choose 1, 2, or 3.");
+                    System.out.println("Enter the lower bound for integration in y direction:");
+                    double doubleLowerBoundY = scanner.nextDouble();
+                    scanner.nextLine();  // Consume newline character
+
+                    System.out.println("Enter the upper bound for integration in y direction:");
+                    double doubleUpperBoundY = scanner.nextDouble();
+                    scanner.nextLine();  // Consume newline character
+
+                    // Parse the string representing a polynomial expression into an array of coefficients for function f(x)
+                    double[] doubleCoefficientsX = parsePolynomialCoefficients(doubleFunctionStringX);
+
+                    // Define the function for double integration in x direction
+                    UnivariateFunction doubleFunctionX = new PolynomialFunction(doubleCoefficientsX);
+
+                    // Parse the string representing a polynomial expression into an array of coefficients for function g(y)
+                    double[] doubleCoefficientsY = parsePolynomialCoefficients(doubleFunctionStringY);
+
+                    // Define the function for double integration in y direction
+                    UnivariateFunction doubleFunctionY = new PolynomialFunction(doubleCoefficientsY);
+
+                    // Perform double integration (definite)
+                    double doubleDefiniteResult = doubleIntegration(doubleFunctionX, doubleLowerBoundX, doubleUpperBoundX, doubleFunctionY, doubleLowerBoundY, doubleUpperBoundY, true);
+                    System.out.println("Double Integral (Definite) Result: " + doubleDefiniteResult);
+
+                    break;
+                case 4:
+                    System.out.println("Enter the function f(x) for double integration (in terms of x):");
+                    String doubleFunctionStringX_2 = scanner.nextLine();
+
+                    System.out.println("Enter the function g(y) for double integration (in terms of y):");
+                    String doubleFunctionStringY_2 = scanner.nextLine();
+
+                    // Parse the string representing a polynomial expression into an array of coefficients for function f(x)
+                    double[] doubleCoefficientsX_2 = parsePolynomialCoefficients(doubleFunctionStringX_2);
+
+                    // Define the function for double integration in x direction
+                    UnivariateFunction doubleFunctionX_2 = new PolynomialFunction(doubleCoefficientsX_2);
+
+                    // Parse the string representing a polynomial expression into an array of coefficients for function g(y)
+                    double[] doubleCoefficientsY_2 = parsePolynomialCoefficients(doubleFunctionStringY_2);
+
+                    // Define the function for double integration in y direction
+                    UnivariateFunction doubleFunctionY_2 = new PolynomialFunction(doubleCoefficientsY_2);
+
+                    // Perform double integration (indefinite)
+                    double doubleIndefiniteResult = doubleIntegration(doubleFunctionX_2, 0, 0, doubleFunctionY_2, 0, 0, false);
+                    System.out.println("Double Integral (Indefinite) Result: " + doubleIndefiniteResult);
+
+                    break;
+                case 5:
+                    System.out.println("Triple Integral (Definite) is not implemented yet.");
+                    break;
+                case 6:
+                    System.out.println("Triple Integral (Indefinite) is not implemented yet.");
+                    break;
+                default:
+                    System.out.println("Invalid option. Please select a valid option.");
+            }
+        } catch (InputMismatchException e) {
+            System.out.println("Invalid input. Please enter valid numeric values.");
+        } finally {
+            scanner.close();
+        }
+    }
+
+    // Method to parse a string representing a polynomial expression into an array of coefficients
+    private static double[] parsePolynomialCoefficients(String expression) {
+        // Handle the special case when the function is just "x"
+        if (expression.equals("x")) {
+            return new double[]{0.0, 1.0}; // Coefficients for the linear term 1*x
         }
 
-        scanner.close();
+        // Remove all whitespace characters from the expression
+        expression = expression.replaceAll("\\s+", "");
+
+        // Split the expression into individual terms using + or - as delimiters
+        String[] terms = expression.split("(?=[-+])");
+
+        double[] coefficients = new double[terms.length];
+
+        for (int i = 0; i < terms.length; i++) {
+            String term = terms[i];
+
+            // If the term is empty (e.g., due to leading or trailing + or -), skip it
+            if (term.isEmpty()) {
+                continue;
+            }
+
+            // Extract the coefficient and exponent from the term
+            String[] parts = term.split("x\\^?");
+            double coefficient, exponent;
+
+            if (parts.length == 0) {
+                // If the term does not contain 'x', it represents a constant term
+                coefficient = Double.parseDouble(term);
+                exponent = 0.0;
+            } else if (parts.length == 1) {
+                // If the term contains 'x' but no exponent, it represents a linear term
+                coefficient = parts[0].equals("-") ? -1.0 : Double.parseDouble(parts[0]);
+                exponent = 1.0;
+            } else {
+                // If the term contains both 'x' and an exponent
+                coefficient = parts[0].isEmpty() ? (parts[1].equals("-") ? -1.0 : 1.0) : Double.parseDouble(parts[0]);
+                exponent = parts.length > 1 ? Double.parseDouble(parts[parts.length - 1]) : 1.0;
+            }
+
+            // Assign coefficient to the appropriate position in the array
+            coefficients[i] = coefficient;
+        }
+
+        return coefficients;
     }
+
 }
