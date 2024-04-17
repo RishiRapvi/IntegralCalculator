@@ -1,5 +1,3 @@
-
-
 import org.apache.commons.math4.legacy.analysis.UnivariateFunction;
 import org.apache.commons.math4.legacy.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math4.legacy.analysis.integration.UnivariateIntegrator;
@@ -77,11 +75,10 @@ public class IntegralCalculator {
                     String definiteFunctionString = scanner.nextLine();
 
                     System.out.println("Enter the lower bound for definite integration:");
-                    double definiteLowerBound = scanner.nextDouble();
-                    scanner.nextLine();  // Consume newline character
+                    double definiteLowerBound = Double.parseDouble(scanner.next());
 
                     System.out.println("Enter the upper bound for definite integration:");
-                    double definiteUpperBound = scanner.nextDouble();
+                    double definiteUpperBound = Double.parseDouble(scanner.next());
                     scanner.nextLine();  // Consume newline character
 
                     // Parse the string representing a polynomial expression into an array of coefficients
@@ -95,6 +92,7 @@ public class IntegralCalculator {
 
                     System.out.println("Definite Integral Result: " + definiteResult);
                     break;
+
                 case 3:
                     System.out.println("Enter the function f(x) for double integration (in terms of x):");
                     String doubleFunctionStringX = scanner.nextLine();
